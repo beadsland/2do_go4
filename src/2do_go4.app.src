@@ -6,7 +6,7 @@
 %%
 %%======================================
 
-{application, 2do_go4,
+{application, '2do_go4',
  [
   {description, ""},
   {vsn, "1"},
@@ -15,6 +15,6 @@
                   kernel,
                   stdlib
                  ]},
-  {mod, { 2do_go4_app, []}},
+  {mod, { '2do_go4_app', []}},
   {env, []}
  ]}.
