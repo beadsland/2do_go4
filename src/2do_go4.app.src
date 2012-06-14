@@ -1,0 +1,20 @@
+%%-*- mode:erlang -*-
+
+%%======================================
+%%
+%% .app file provided to satisfy rebar.
+%%
+%%======================================
+
+{application, 2do_go4,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { 2do_go4_app, []}},
+  {env, []}
+ ]}.

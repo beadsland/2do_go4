@@ -1,0 +1,8 @@
+.project
+.settings
+doc/
+!doc/*.md
+!doc/*.edoc
+
+/deps
+/erl_crash.dump
