@@ -6,3 +6,4 @@ doc/
 
 /deps
 /erl_crash.dump
+/ebin
