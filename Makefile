@@ -1,6 +1,6 @@
-# ---------------------
-# Makefile for nosh_bin
-# ---------------------
+# -------------------
+# Makefile for pose
+# -------------------
 
 # CDDL HEADER START
 # -----------------------------------------------------------------------
@@ -41,13 +41,18 @@ else
 endif
 
 ONLINE	=	`$(PING) www.google.com 2>&1 >/dev/null; \
-			if [ "$$?" -eq "0" ]; then (echo yes); else (echo no); fi`
+			if [ "$$?" -eq "0" ]; then (echo yes); \
+			else (echo no); fi`
 
-SUCCINCT	=	grep -v "Entering directory" | grep -v "Leaving directory"
+SUCCINCT	=	grep -v "Entering directory" \
+				| grep -v "Leaving directory"
 
 ERL_PATH	= 	-pa ebin
-POSURE		=	-pa deps/pose/ebin -s posure
-SUPERL		=	-pa deps/superl/ebin -s superl $(POSURE)
+
+POSURE	=	-i .. -pa ebin -s posure
+SUPERL	=	-pa ../superl/ebin -s superl $(POSURE) -s init stop
+
+REBAR		=	rebar %OPS | $(SUCCINCT)
 
 #
 # Build rules start
@@ -55,24 +60,24 @@ SUPERL		=	-pa deps/superl/ebin -s superl $(POSURE)
 
 all:	push good
 
-run:	current good
-
 good:	compile
-	@erl $(ERL_PATH) -i deps -noshell $(SUPERL) -s init stop
-		
+	@if [ "$(DEV)" == yes ]; \
+		then (erl $(ERL_PATH) -i deps -noshell $(SUPERL)); \
+		else (echo Good only in development); fi 
+
 compile:
 	@rm -f *.dump doc/*.md doc/*.html
-	@rebar compile doc | $(SUCCINCT)
+	@$(REBAR:%OPS=compile doc)
 
 doc:	compile
 
 current:
-	@rebar update-deps compile doc | $(SUCCINCT)
+	@$(REBAR:%OPS=update-deps compile doc)
 
 clean: 		online
 	@if [ "$(ONLINE)" == yes ]; \
-			then (rm -rf deps; rebar clean get-deps | $(SUCCINCT)); \
-			else (rebar clean | $(SUCCINCT)); fi
+			then (rm -rf deps; $(REBAR:%OPS=clean get-deps)); \
+			else $(REBAR:%OPS=clean); fi
 	
 online:	
 	@if [ "$(ONLINE)" == yes ]; \
