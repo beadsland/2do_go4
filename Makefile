@@ -1,5 +1,5 @@
 # -------------------
-# Makefile for pose
+# Makefile for 2do_go4
 # -------------------
 
 # CDDL HEADER START
