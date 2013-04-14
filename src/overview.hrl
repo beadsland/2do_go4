@@ -22,10 +22,9 @@
 %% -----------------------------------------------------------------------
 %% CDDL HEADER END
 
-%% @doc This is the Bourne shell built-ins command set for the
-%% <a href="http://github.com/beadsland/nosh">`nosh'</a> project.
-%%
-%% When finished, this sub-project will supply a complete set of
-%% <a href="http://github.com/beadsland/pose">`pose'</a>-compatible
-%% command modules for emulating Bourne shell functionality.
-% @end
+%% @doc This is to be an alternative to traditional task management
+%% software.  Modeled on the old <code>gopher</code> protocol, it
+%% will provide a <em>human-thinkable</em> scripting language for
+%% creating and managing personalized hierarchical project, task, 
+%% and event calendars.
+%% @end

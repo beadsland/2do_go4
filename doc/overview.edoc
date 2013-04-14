@@ -5,15 +5,12 @@
 % .hrl files...
 
 @author Beads D. Land-Trujillo [http://twitter.com/beadsland]
-@copyright 2012 Beads D. Land-Trujillo
+@copyright 2013 Beads D. Land-Trujillo
 @version 0.0.1
-@title Welcome to the `nosh' Bourne shell built-ins command set (nosh_bin)
-@end
+@title Welcome to the 2do_go4 human-thinkable task management system.
 @headerfile "../src/overview.hrl"
+@docfile "doc/TODO_head.edoc"
 
-@reference See <a href="http://goo.gl/AAUaX">Bourne Shell Builtins</a>
-for commands emulated in this package.
-@end
 @reference This is a subproject of the
 <a href="http://github.com/beadsland/nosh">`nosh'</a> application.
 @end
