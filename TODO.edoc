@@ -1,0 +1,15 @@
+@todo seed
+@todo refresh makefile
+@todo transclude stdin
+@todo handle ampersands without complaint
+@todo transcribe / output
+@todo transclude resources by fragment
+@todo ignore comment lines
+@todo ignore blank lines
+@todo no brackets when no fragments
+@todo headers for fragments
+@todo macros (deps vs. dev)
+@todo incorporate w/ nosh Makefile
+@todo track and avoid lines already included
+@todo include todos from modules
+@todo include todos from functions

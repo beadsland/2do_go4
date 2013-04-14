@@ -1,0 +1,8 @@
+@todo seed
+@todo refresh makefile
+@todo transclude stdin
+@todo handle ampersands without complaint
+@todo transcribe / output
+@todo transclude resources by fragment
+@todo ignore comment lines
+@todo ...plus 7 more (see TODO.edoc)
