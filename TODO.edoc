@@ -1,5 +1,3 @@
-@todo seed
-@todo refresh makefile
 @todo transclude stdin
 @todo handle ampersands without complaint
 @todo transcribe / output

@@ -15,10 +15,6 @@ __References__* This is a subproject of the
 
 __<font color="red">To do</font>__
 <br></br>
-* <font color="red">seed
-</font>
-* <font color="red">refresh makefile
-</font>
 * <font color="red">transclude stdin
 </font>
 * <font color="red">handle ampersands without complaint
@@ -29,7 +25,11 @@ __<font color="red">To do</font>__
 </font>
 * <font color="red">ignore comment lines
 </font>
-* <font color="red">...plus 7 more (see TODO.edoc)
+* <font color="red">ignore blank lines
+</font>
+* <font color="red">no brackets when no fragments
+</font>
+* <font color="red">...plus 5 more (see TODO.edoc)
 </font>
 This is to be an alternative to traditional task management
   software.  Modeled on the old `gopher` protocol, it
