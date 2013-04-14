@@ -1,4 +1,4 @@
-@todo transclude stdin
+@todo basic pose command
 @todo handle ampersands without complaint
 @todo transcribe / output
 @todo transclude resources by fragment

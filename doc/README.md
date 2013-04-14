@@ -15,7 +15,7 @@ __References__* This is a subproject of the
 
 __<font color="red">To do</font>__
 <br></br>
-* <font color="red">transclude stdin
+* <font color="red">basic pose command
 </font>
 * <font color="red">handle ampersands without complaint
 </font>
