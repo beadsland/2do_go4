@@ -28,7 +28,7 @@ include include/Header.mk
 # All good rules
 #
 
-.PHONY:	all good todo docs compile neat current clean push make
+.PHONY:	all good todo docs compile current neat clean push make
 
 all:		push compile good
 
@@ -40,16 +40,25 @@ $(POSEBIN)/pose.beam:
 	$(error Must compile pose to do good)
 
 #
+# Rules to regenerate documentation
+#
+
+docs:	README.md \
+			$(patsubst src/%.erl, doc/%.md, $(wildcard src/*.erl))
+
+doc/%.md:	src/%.erl
+	@$(CROWBAR:_cmds_=doc)
+
+#
 # Temporary todo rules pending proper 2do_go4 implementation
 #
 
-docs:		README.md
-
-todo:		README.md
+todo:	README.md
 	@git add -f $(TODO_FILES)
-	@git commit $(TODO_FILES) -m "updated todo"
+	@if ! git diff-index --cached --quiet HEAD; \
+		then (git commit $(TODO_FILES) -m "updated todo"); fi
 
-README.md:	doc/TODO_head.edoc
+README.md:	doc/TODO_head.edoc doc/overview.edoc src/overview.hrl
 	@$(CROWBAR:_cmds_=doc)
 
 doc/TODO_head.edoc:		TODO.edoc
@@ -67,12 +76,12 @@ TODO.edoc:	;
 compile:	neat
 	@$(CROWBAR:_cmds_=compile doc)
 
-current:	neat
+current:	neat make
 	@if [ "$(ONLINE)" == yes ]; \
 		then $(CROWBAR:_cmds_=update-deps compile doc); \
 		else $(CROWBAR:_cmds_=compile doc); fi
 
-clean:		neat
+clean:		neat make
 	@if [ "$(ONLINE)" == yes ]; \
 		then (rm -rf deps; $(CROWBAR:_cmds_=clean get-deps)); \
 		else ($(CROWBAR:_cmds_=clean)); fi
