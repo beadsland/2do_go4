@@ -49,8 +49,11 @@
 %-define(debug, true).
 -include_lib("pose/include/interface.hrl").
 
+-include("macro.hrl").
+
 -import(gen_command).
 -import(string).
+-import(io).
 
 %%
 %% Exported Functions
@@ -64,6 +67,9 @@
 % private callbacks
 -export([do_run/2]).
 
+% private exports
+-export([loop/3]).
+		
 %%
 %% API Functions
 %%
@@ -85,13 +91,37 @@ run(IO, ARG, ENV) -> gen_command:run(IO, ARG, ENV, ?MODULE).
 %%
 
 %% @private Callback entry point for gen_command behaviour.
-do_run(IO, ARG) ->
-    Words = [atom_to_list(X) || X <- ARG#arg.v],
-    Line = string:join(Words, " "),
-    ?STDOUT("~s~n", [Line]),
-    exit(ok).
+do_run(IO, _ARG) ->
+  ?STDOUT("Starting Dogo ~s list interpreter ~p~n", [?VERSION(?MODULE), self()]),
+  ?STDOUT("My IO is: ~p~n", [IO]),
+  Data = io:get_line(""),
+  ?STDOUT("My first line is: ~s~n", [Data]),
+  ?STDOUT("Finishing Dogo.\n"),
+  ok.
+%  ?MODULE:loop(IO, ?MODULE, self()).
 
 %%
 %% Local Functions
 %%
 
+%%@private Export to allow for hotswap.
+loop(IO, Cmd, CmdPid) ->
+  receive
+    {purging, _Pid, _Mod} 						-> % chase your tail
+      ?MODULE:loop(IO, Cmd, CmdPid);
+    {stdout, Stdin, Line} when CmdPid == self(),
+                            Stdin == IO#std.in  ->
+      do_line(IO, Cmd, CmdPid, Line);
+    Noise when CmdPid == self() 				->
+      do_noise(IO, Cmd, CmdPid, Noise)
+  end.
+
+% Handle lines of input to interpreter
+do_line(IO, Cmd, CmdPid, Line) ->
+  ?STDOUT("dogo: ~p~n", [Line]),
+  ?MODULE:loop(IO, Cmd, CmdPid).
+
+% Handle noise on message queue.
+do_noise(IO, Cmd, CmdPid, Noise) ->
+  ?DEBUG("noise: ~p ~p~n", [Noise, self()]),
+  ?MODULE:loop(IO, Cmd, CmdPid).

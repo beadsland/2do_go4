@@ -1,4 +1,5 @@
-@todo basic pose command
+@todo nosh_bin: cat as test case for stdin capture
+@todo basic command
 @todo handle ampersands without complaint
 @todo transcribe / output
 @todo transclude resources by fragment
