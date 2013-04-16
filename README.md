@@ -15,7 +15,9 @@ __References__* This is a subproject of the
 
 __<font color="red">To do</font>__
 <br></br>
-* <font color="red">basic pose command
+* <font color="red">nosh_bin: cat as test case for stdin capture
+</font>
+* <font color="red">basic command
 </font>
 * <font color="red">handle ampersands without complaint
 </font>
@@ -27,12 +29,17 @@ __<font color="red">To do</font>__
 </font>
 * <font color="red">ignore blank lines
 </font>
-* <font color="red">no brackets when no fragments
-</font>
-* <font color="red">...plus 5 more (see TODO.edoc)
+* <font color="red">...plus 6 more (see TODO.edoc)
 </font>
 This is to be an alternative to traditional task management
   software.  Modeled on the old `gopher` protocol, it
   will provide a _human-thinkable_ scripting language for
   creating and managing personalized hierarchical project, task,
   and event calendars.
+
+##Modules##
+
+
+<table width="100%" border="0" summary="list of modules">
+<tr><td><a href="http://github.com/beadsland/nosh_bin/blob/master/doc/dogo.md" class="module">dogo</a></td></tr></table>
+
