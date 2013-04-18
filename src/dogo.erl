@@ -52,7 +52,6 @@
 -include("macro.hrl").
 
 -import(gen_command).
--import(string).
 -import(io).
 
 %%
@@ -69,7 +68,7 @@
 
 % private exports
 -export([loop/3]).
-		
+
 %%
 %% API Functions
 %%
@@ -92,7 +91,8 @@ run(IO, ARG, ENV) -> gen_command:run(IO, ARG, ENV, ?MODULE).
 
 %% @private Callback entry point for gen_command behaviour.
 do_run(IO, _ARG) ->
-  ?STDOUT("Starting Dogo ~s list interpreter ~p~n", [?VERSION(?MODULE), self()]),
+  ?STDOUT("Starting Dogo ~s list interpreter ~p~n",
+          [?VERSION(?MODULE), self()]),
   ?STDOUT("My IO is: ~p~n", [IO]),
   Data = io:get_line(""),
   ?STDOUT("My first line is: ~s~n", [Data]),
