@@ -1,8 +1,8 @@
-@todo ignore comment lines
-@todo ignore blank lines
 @todo transclusion
 @todo edoc output 
 @todo edoc escape ampersands
 @todo new make todo rule
 @todo build out view plugin for eclipse
-@todo ...plus 10 more (see TODO.edoc)
+@todo completion
+@todo eclipse view completion
+@todo ...plus 8 more (see TODO.edoc)
