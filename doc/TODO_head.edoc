@@ -1,8 +1,8 @@
-@todo nosh_bin: cat as test case for stdin capture
-@todo basic command
-@todo handle ampersands without complaint
-@todo transcribe / output
-@todo transclude resources by fragment
 @todo ignore comment lines
 @todo ignore blank lines
-@todo ...plus 6 more (see TODO.edoc)
+@todo transclusion
+@todo edoc output 
+@todo edoc escape ampersands
+@todo new make todo rule
+@todo build out view plugin for eclipse
+@todo ...plus 10 more (see TODO.edoc)

@@ -15,21 +15,21 @@ __References__* This is a subproject of the
 
 __<font color="red">To do</font>__
 <br></br>
-* <font color="red">nosh_bin: cat as test case for stdin capture
-</font>
-* <font color="red">basic command
-</font>
-* <font color="red">handle ampersands without complaint
-</font>
-* <font color="red">transcribe / output
-</font>
-* <font color="red">transclude resources by fragment
-</font>
 * <font color="red">ignore comment lines
 </font>
 * <font color="red">ignore blank lines
 </font>
-* <font color="red">...plus 6 more (see TODO.edoc)
+* <font color="red">transclusion
+</font>
+* <font color="red">edoc output 
+</font>
+* <font color="red">edoc escape ampersands
+</font>
+* <font color="red">new make todo rule
+</font>
+* <font color="red">build out view plugin for eclipse
+</font>
+* <font color="red">...plus 10 more (see TODO.edoc)
 </font>
 This is to be an alternative to traditional task management
   software.  Modeled on the old `gopher` protocol, it

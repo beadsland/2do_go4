@@ -1,14 +1,17 @@
-@todo nosh_bin: cat as test case for stdin capture
-@todo basic command
-@todo handle ampersands without complaint
-@todo transcribe / output
-@todo transclude resources by fragment
-@todo ignore comment lines
 @todo ignore blank lines
+@todo transclusion
+@todo edoc output 
+@todo edoc escape ampersands
+@todo new make todo rule
+@todo build out view plugin for eclipse
+@todo completion
+@todo eclipse view completion
+@todo completion propogation
+@todo transclude resources by fragment
+@todo transclude interpreted file
 @todo no brackets when no fragments
 @todo headers for fragments
-@todo macros (deps vs. dev)
-@todo incorporate w/ nosh Makefile
+@todo macros
 @todo track and avoid lines already included
 @todo include todos from modules
 @todo include todos from functions
