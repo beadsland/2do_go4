@@ -53,6 +53,7 @@
 
 -import(gen_command).
 -import(io).
+-import(re).
 
 %%
 %% Exported Functions
@@ -114,7 +115,7 @@ loop(IO) ->
     {stdout, Stdin, eof}					->
       ?DEBUG("cat: eof\n"), exit(ok);
     {stdout, Stdin, Line}					->
-      ?STDOUT(Line), do_captln(IO);
+	  do_procln(IO, Line);
     Noise									->
       ?STDERR("cat: noise: ~p~n", [Noise]),
       do_captln(IO)
@@ -124,3 +125,13 @@ do_captln(IO) ->
   Stdin = IO#std.in,
   Stdin ! {stdin, self(), captln},
   ?MODULE:loop(IO).
+
+do_procln(IO, [$\n]) -> do_captln(IO);
+do_procln(IO, [Space | Rest]) when Space == 32; Space == $\t ->
+  {ok, MP} = re:compile("^[\\t ]*\\n$"),
+  case re:run(Rest, MP, [{capture, none}]) of
+	match	-> do_captln(IO);
+	nomatch -> ?STDOUT(IO), do_captln(IO)
+  end;
+do_procln(IO, [$# | _Rest]) -> do_captln(IO);
+do_procln(IO, Line) -> ?STDOUT(Line), do_captln(IO).
