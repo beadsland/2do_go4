@@ -1,3 +1,5 @@
+@todo macro version include dev
+@todo file not stdin
 @todo file transclusion
 @todo edoc output 
 @todo edoc escape ampersands

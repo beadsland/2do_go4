@@ -26,7 +26,7 @@
 %% @author Beads D. Land-Trujillo [http://twitter.com/beadsland]
 %% @copyright 2013 Beads D. Land-Trujillo
 
-%% @version 0.0.2
+%% @version 0.0.4
 
 -define(module, dogo).
 
@@ -40,13 +40,13 @@
 -endif.
 % END POSE PACKAGE PATTERN
 
--version("0.0.2").
+-version("0.0.4").
 
 %%
 %% Include files
 %%
 
-%-define(debug, true).
+-define(debug, true).
 -include_lib("pose/include/interface.hrl").
 
 -include("macro.hrl").
@@ -54,6 +54,8 @@
 -import(gen_command).
 -import(io).
 -import(re).
+-import(filename).
+-import(string).
 
 %%
 %% Exported Functions
@@ -68,7 +70,7 @@
 -export([do_run/2]).
 
 % private exports
--export([loop/1]).
+-export([loop/2]).
 
 %%
 %% API Functions
@@ -91,47 +93,56 @@ run(IO, ARG, ENV) -> gen_command:run(IO, ARG, ENV, ?MODULE).
 %%
 
 %% @private Callback entry point for gen_command behaviour.
-do_run(IO, _ARG) ->
+do_run(IO, ARG) ->
   ?STDOUT("Starting Dogo ~s list interpreter ~p~n",
           [?VERSION(?MODULE), self()]),
-  do_captln(IO).
+  do_file(IO, ARG).
 
 %%
 %% Local Functions
 %%
 
+do_file(IO, ARG) ->
+  C = ARG#arg.cmd, [RelFile | V] = ARG#arg.v,
+  ?DEBUG("File: ~s~n", [RelFile]),
+  AbsFile = filename:absname(RelFile),
+  Eq = string:equal(RelFile, AbsFile),
+  if Eq		-> do_captln(IO, ARG);
+	 true	-> do_file(IO, ?ARG(C, [AbsFile | V]))
+  end.
+
 %%@private Export to allow for hotswap.
-loop(IO) ->
+loop(IO, ARG) ->
   Stdin = IO#std.in,  
   receive
     {purging, _Pid, _Mod}					-> % chase your tail
-      ?MODULE:loop(IO);
+      ?MODULE:loop(IO, ARG);
     {'EXIT', Stdin, Reason}					->
-      ?DEBUG("cat: term: ~p~n", [Reason]), exit(ok);
+      ?DEBUG("~s: term: ~p~n", [ARG#arg.cmd, Reason]), exit(ok);
     {'EXIT', _Pid, _Reason}					->
-      ?MODULE:loop(IO);
+      ?MODULE:loop(IO, ARG);
     {stdout, Stdin, ".\n"} when IO#std.stop	->
-      ?DEBUG("cat: stop\n"), exit(ok);
+      ?DEBUG("~s: stop~n", [ARG#arg.cmd]), exit(ok);
     {stdout, Stdin, eof}					->
-      ?DEBUG("cat: eof\n"), exit(ok);
+      ?DEBUG("~s: eof~n", [ARG#arg.cmd]), exit(ok);
     {stdout, Stdin, Line}					->
-	  do_procln(IO, Line);
+      do_procln(IO, ARG, Line);
     Noise									->
-      ?STDERR("cat: noise: ~p~n", [Noise]),
-      do_captln(IO)
+      ?STDERR("~s: noise: ~p~n", [ARG#arg.cmd, Noise]),
+      do_captln(IO, ARG)
   end.
 
-do_captln(IO) ->
+do_captln(IO, ARG) ->
   Stdin = IO#std.in,
   Stdin ! {stdin, self(), captln},
-  ?MODULE:loop(IO).
+  ?MODULE:loop(IO, ARG).
 
-do_procln(IO, [$\n]) -> do_captln(IO);
-do_procln(IO, [Space | Rest]) when Space == 32; Space == $\t ->
+do_procln(IO, ARG, [$\n]) -> do_captln(IO, ARG);
+do_procln(IO, ARG, [Space | Rest]) when Space == 32; Space == $\t ->
   {ok, MP} = re:compile("^[\\t ]*\\n$"),
   case re:run(Rest, MP, [{capture, none}]) of
-	match	-> do_captln(IO);
-	nomatch -> ?STDOUT(IO), do_captln(IO)
+	match	-> do_captln(IO, ARG);
+	nomatch -> ?STDOUT(IO), do_captln(IO, ARG)
   end;
-do_procln(IO, [$# | _Rest]) -> do_captln(IO);
-do_procln(IO, Line) -> ?STDOUT(Line), do_captln(IO).
+do_procln(IO, ARG, [$# | _Rest]) -> do_captln(IO, ARG);
+do_procln(IO, ARG, Line) -> ?STDOUT(Line), do_captln(IO, ARG).

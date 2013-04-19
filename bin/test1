@@ -1,6 +1,6 @@
 #!dogo
 # ^ must be in bin directory - testing only
 
-       	  
+&test2     	  
 line of text
 second line of text
