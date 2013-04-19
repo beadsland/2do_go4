@@ -30,4 +30,4 @@ ERL_AFLAGS="-deps dev"
 export ERL_AFLAGS
 echo Running development dogo
 
-$SCRDIR/../include/poser.sh dogo $@
+cat $1 | $SCRDIR/../include/poser.sh dogo $@

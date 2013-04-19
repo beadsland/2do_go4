@@ -26,7 +26,7 @@
 %% @author Beads D. Land-Trujillo [http://twitter.com/beadsland]
 %% @copyright 2013 Beads D. Land-Trujillo
 
-%% @version 0.0.1
+%% @version 0.0.2
 
 -define(module, dogo).
 
@@ -40,7 +40,7 @@
 -endif.
 % END POSE PACKAGE PATTERN
 
--version("0.0.1").
+-version("0.0.2").
 
 %%
 %% Include files
@@ -67,7 +67,7 @@
 -export([do_run/2]).
 
 % private exports
--export([loop/3]).
+-export([loop/1]).
 
 %%
 %% API Functions
@@ -93,35 +93,34 @@ run(IO, ARG, ENV) -> gen_command:run(IO, ARG, ENV, ?MODULE).
 do_run(IO, _ARG) ->
   ?STDOUT("Starting Dogo ~s list interpreter ~p~n",
           [?VERSION(?MODULE), self()]),
-  ?STDOUT("My IO is: ~p~n", [IO]),
-  Data = io:get_line(""),
-  ?STDOUT("My first line is: ~s~n", [Data]),
-  ?STDOUT("Finishing Dogo.\n"),
-  ok.
-%  ?MODULE:loop(IO, ?MODULE, self()).
+  do_captln(IO).
 
 %%
 %% Local Functions
 %%
 
 %%@private Export to allow for hotswap.
-loop(IO, Cmd, CmdPid) ->
+loop(IO) ->
+  Stdin = IO#std.in,  
   receive
-    {purging, _Pid, _Mod} 						-> % chase your tail
-      ?MODULE:loop(IO, Cmd, CmdPid);
-    {stdout, Stdin, Line} when CmdPid == self(),
-                            Stdin == IO#std.in  ->
-      do_line(IO, Cmd, CmdPid, Line);
-    Noise when CmdPid == self() 				->
-      do_noise(IO, Cmd, CmdPid, Noise)
+    {purging, _Pid, _Mod}					-> % chase your tail
+      ?MODULE:loop(IO);
+    {'EXIT', Stdin, Reason}					->
+      ?DEBUG("cat: term: ~p~n", [Reason]), exit(ok);
+    {'EXIT', _Pid, _Reason}					->
+      ?MODULE:loop(IO);
+    {stdout, Stdin, ".\n"} when IO#std.stop	->
+      ?DEBUG("cat: stop\n"), exit(ok);
+    {stdout, Stdin, eof}					->
+      ?DEBUG("cat: eof\n"), exit(ok);
+    {stdout, Stdin, Line}					->
+      ?STDOUT(Line), do_captln(IO);
+    Noise									->
+      ?STDERR("cat: noise: ~p~n", [Noise]),
+      do_captln(IO)
   end.
 
-% Handle lines of input to interpreter
-do_line(IO, Cmd, CmdPid, Line) ->
-  ?STDOUT("dogo: ~p~n", [Line]),
-  ?MODULE:loop(IO, Cmd, CmdPid).
-
-% Handle noise on message queue.
-do_noise(IO, Cmd, CmdPid, Noise) ->
-  ?DEBUG("noise: ~p ~p~n", [Noise, self()]),
-  ?MODULE:loop(IO, Cmd, CmdPid).
+do_captln(IO) ->
+  Stdin = IO#std.in,
+  Stdin ! {stdin, self(), captln},
+  ?MODULE:loop(IO).
