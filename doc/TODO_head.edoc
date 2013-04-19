@@ -1,8 +1,8 @@
+@todo macro version include dev
+@todo file not stdin
 @todo file transclusion
 @todo edoc output 
 @todo edoc escape ampersands
 @todo new make todo rule
 @todo build out view plugin for eclipse
-@todo completion
-@todo eclipse view completion
-@todo ...plus 10 more (see TODO.edoc)
+@todo ...plus 12 more (see TODO.edoc)
