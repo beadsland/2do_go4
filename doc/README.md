@@ -15,7 +15,7 @@ __References__* This is a subproject of the
 
 __<font color="red">To do</font>__
 <br></br>
-* <font color="red">transclusion
+* <font color="red">file transclusion
 </font>
 * <font color="red">edoc output 
 </font>
@@ -29,7 +29,7 @@ __<font color="red">To do</font>__
 </font>
 * <font color="red">eclipse view completion
 </font>
-* <font color="red">...plus 8 more (see TODO.edoc)
+* <font color="red">...plus 10 more (see TODO.edoc)
 </font>
 This is to be an alternative to traditional task management
   software.  Modeled on the old `gopher` protocol, it
