@@ -1,3 +1,5 @@
+@todo stderr data end with \n
+@todo enoent from readfile
 @todo file not stdin
 @todo test with stdin only
 @todo test with file only
