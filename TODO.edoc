@@ -1,4 +1,8 @@
 @todo file not stdin
+@todo test with stdin only
+@todo test with file only
+@todo prune extranous Src parameter
+@todo refactor file read code to pose
 @todo file transclusion
 @todo edoc output 
 @todo edoc escape ampersands

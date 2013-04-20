@@ -1,8 +1,8 @@
 @todo file not stdin
+@todo test with stdin only
+@todo test with file only
+@todo prune extranous Src parameter
+@todo refactor file read code to pose
 @todo file transclusion
 @todo edoc output 
-@todo edoc escape ampersands
-@todo new make todo rule
-@todo build out view plugin for eclipse
-@todo completion
-@todo ...plus 11 more (see TODO.edoc)
+@todo ...plus 15 more (see TODO.edoc)
