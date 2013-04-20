@@ -3,6 +3,7 @@
 @todo test with file only
 @todo prune extranous Src parameter
 @todo refactor file read code to pose
+@todo standardize use of ?ARGC
 @todo file transclusion
 @todo edoc output 
 @todo edoc escape ampersands
