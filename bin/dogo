@@ -28,6 +28,12 @@ SCRDIR=$(dirname ${BASH_SOURCE[0]})
 
 ERL_AFLAGS="-deps dev"
 export ERL_AFLAGS
-echo Running development dogo
 
-cat $1 | $SCRDIR/../include/poser.sh dogo $@
+BASE=$(basename $(dirname ${BASH_SOURCE[0]}))
+PROJ=$(basename $(dirname $(dirname ${BASH_SOURCE[0]})))
+FILE=../$PROJ/$BASE/$1
+length=$(($#))
+array=${@:2:$length}
+
+#cat $1 | $SCRDIR/../include/poser.sh dogo
+$SCRDIR/../include/poser.sh dogo $FILE $array
