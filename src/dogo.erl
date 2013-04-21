@@ -25,7 +25,7 @@
 %% @doc Echo words to `stdout'.
 %% @author Beads D. Land-Trujillo [http://twitter.com/beadsland]
 %% @copyright 2013 Beads D. Land-Trujillo
-
+ 
 %% @version 0.0.5
 
 -define(module, dogo).
@@ -70,7 +70,7 @@
 -export([do_run/2]).
 
 % private exports
--export([loop/3, file_loop/3, run_file/4]).
+-export([loop/2, file_loop/3, run_file/4]).
 
 %%
 %% API Functions
@@ -97,7 +97,7 @@ do_run(IO, ARG) ->
   Format = "Starting Dogo ~s list interpreter ~p~n",
   ?STDOUT(Format, [?VERSION(?MODULE), self()]),
   case ARG#arg.v of
-    []			-> do_captln(IO, ARG, stdin);
+    []			-> do_captln(IO, ARG);
     [File | _V]	-> Abs = filename:absname(File),
                    do_file_read(IO, ARG, Abs)
   end.
@@ -107,24 +107,24 @@ do_run(IO, ARG) ->
 %%
 
 %%@private Export to allow for hotswap.
-loop(IO, ARG, Src) ->
+loop(IO, ARG) ->
   receive
     {purging, _Pid, _Mod}							-> % chase your tail
       ?MODULE:loop(IO, ARG);
     {'EXIT', ExitPid, Reason}						->
-      do_exit(IO, ARG, Src, ExitPid, Reason);
+      do_exit(IO, ARG, ExitPid, Reason);
     {stdout, Stdin, Line} when Stdin == IO#std.in	->
-      do_line(IO, ARG, Src, Line);
+      do_line(IO, ARG, Line);
 	{stderr, Stdin, Data} when Stdin == IO#std.in	->
 	  ?STDERR(Data);
     Noise											->
-      do_noise(IO, ARG, Src, Noise)
+      do_noise(IO, ARG, Noise)
   end.
 
 do_file_read(IO, ARG, Src) ->
   RunPid = spawn_link(?MODULE, run_file, [?IO(self()), ARG, ?ENV, Src]),
   NewIO = ?IO(RunPid, IO#std.out, IO#std.err, false, false),
-  do_captln(NewIO, ARG, Src).
+  do_captln(NewIO, ARG).
 
 run_file(IO, ARG, _ENV, Src) ->
   case file:open(Src, [read]) of
@@ -163,35 +163,35 @@ file_noise(IO, ARG, Device, Noise) ->
   file_loop(IO, ARG, Device).
 
 % Handle a line of input.
-do_line(IO, ARG, Src, Line) ->
+do_line(IO, ARG, Line) ->
   case Line of
     ".\n" when IO#std.stop	->
       exit(ok);
     eof						->
       exit(ok);
     _						->
-      do_procln(IO, ARG, Src, Line)
+      do_procln(IO, ARG, Line)
   end.
 
 % Process a line of dogo format input.
-do_procln(IO, ARG, Src, [$\n]) -> do_captln(IO, ARG, Src);
-do_procln(IO, ARG, Src, [Space | Rest]) when Space == 32; Space == $\t ->
+do_procln(IO, ARG, [$\n]) -> do_captln(IO, ARG);
+do_procln(IO, ARG, [Space | Rest]) when Space == 32; Space == $\t ->
   {ok, MP} = re:compile("^[\\t ]*\\n$"),
   case re:run(Rest, MP, [{capture, none}]) of
-    match	-> do_captln(IO, ARG, Src); 			% ignore blank line
-    nomatch -> ?STDOUT(IO), do_captln(IO, ARG, Src)
+    match	-> do_captln(IO, ARG); 			% ignore blank line
+    nomatch -> ?STDOUT(IO), do_captln(IO, ARG)
   end;
-do_procln(IO, ARG, Src, [$# | _Rest]) -> do_captln(IO, ARG, Src);
-do_procln(IO, ARG, Src, Line) -> ?STDOUT(Line), do_captln(IO, ARG, Src).
+do_procln(IO, ARG, [$# | _Rest]) -> do_captln(IO, ARG);
+do_procln(IO, ARG, Line) -> ?STDOUT(Line), do_captln(IO, ARG).
 
 % Send a message to capture another line from stdin.
-do_captln(IO, ARG, Src) ->
+do_captln(IO, ARG) ->
   Stdin = IO#std.in,
   Stdin ! {stdin, self(), captln},
-  ?MODULE:loop(IO, ARG, Src).
+  ?MODULE:loop(IO, ARG).
 
 % Handle process exit messages.
-do_exit(IO, ARG, Src, ExitPid, Reason) ->
+do_exit(IO, ARG, ExitPid, Reason) ->
   case ExitPid of
     Stdin when Stdin == IO#std.in	->
 	  case Reason of
@@ -200,10 +200,10 @@ do_exit(IO, ARG, Src, ExitPid, Reason) ->
 		_Else		-> exit({ARG#arg.cmd, Reason})
 	  end;
     _ 								->
-      ?MODULE:loop(IO, ARG, Src)
+      ?MODULE:loop(IO, ARG)
   end.
 
 % Handle noise on the message queue.
-do_noise(IO, ARG, Src, Noise) ->
+do_noise(IO, ARG, Noise) ->
   ?STDERR("~s: noise: ~p~n", [ARG#arg.cmd, Noise]),
-  do_captln(IO, ARG, Src).
+  do_captln(IO, ARG).

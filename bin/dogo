@@ -35,5 +35,5 @@ FILE=../$PROJ/$BASE/$1
 length=$(($#))
 array=${@:2:$length}
 
-#cat $1 | $SCRDIR/../include/poser.sh dogo
-$SCRDIR/../include/poser.sh dogo $FILE $array
+cat $1 | $SCRDIR/../include/poser.sh dogo
+#$SCRDIR/../include/poser.sh dogo $FILE $array
