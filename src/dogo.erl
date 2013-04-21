@@ -18,14 +18,14 @@
 %% by brackets replaced by your own identifying information:
 %% "Portions Copyright [year] [name of copyright owner]"
 %%
-%% Copyright 2012 Beads D. Land-Trujillo.  All Rights Reserved
+%% Copyright 2013 Beads D. Land-Trujillo.  All Rights Reserved.
 %% -----------------------------------------------------------------------
 %% CDDL HEADER END
 
-%% @doc Echo words to `stdout'.
+%% @doc Rudimentary 2do_go4 interpreter.
 %% @author Beads D. Land-Trujillo [http://twitter.com/beadsland]
 %% @copyright 2013 Beads D. Land-Trujillo
- 
+
 %% @version 0.0.5
 
 -define(module, dogo).
@@ -51,11 +51,7 @@
 -include_lib("pose/include/macro.hrl").
 
 -import(gen_command).
--import(io).
 -import(re).
--import(filename).
--import(string).
--import(file).
 
 %%
 %% Exported Functions
@@ -70,7 +66,7 @@
 -export([do_run/2]).
 
 % private exports
--export([loop/2, file_loop/3, run_file/4]).
+-export([loop/2]).
 
 %%
 %% API Functions
@@ -98,8 +94,9 @@ do_run(IO, ARG) ->
   ?STDOUT(Format, [?VERSION(?MODULE), self()]),
   case ARG#arg.v of
     []			-> do_captln(IO, ARG);
-    [File | _V]	-> Abs = filename:absname(File),
-                   do_file_read(IO, ARG, Abs)
+    [File | _V]	-> ReadPid = dogo_creat:open_read(File),
+                   NewIO = ?IO(ReadPid, IO#std.out, IO#std.err),
+                   do_captln(NewIO, ARG)
   end.
 
 %%
@@ -115,62 +112,18 @@ loop(IO, ARG) ->
       do_exit(IO, ARG, ExitPid, Reason);
     {stdout, Stdin, Line} when Stdin == IO#std.in	->
       do_line(IO, ARG, Line);
-	{stderr, Stdin, Data} when Stdin == IO#std.in	->
-	  ?STDERR(Data);
+    {stderr, Stdin, Data} when Stdin == IO#std.in	->
+      ?STDERR(Data);
     Noise											->
       do_noise(IO, ARG, Noise)
   end.
 
-do_file_read(IO, ARG, Src) ->
-  RunPid = spawn_link(?MODULE, run_file, [?IO(self()), ARG, ?ENV, Src]),
-  NewIO = ?IO(RunPid, IO#std.out, IO#std.err, false, false),
-  do_captln(NewIO, ARG).
-
-run_file(IO, ARG, _ENV, Src) ->
-  case file:open(Src, [read]) of
-    {error, Reason} -> exit({Src, Reason});
-    {ok, Device}	-> ?MODULE:file_loop(IO, ARG, Device)
-  end.
-
-file_loop(IO, ARG, Device) ->
-  receive
-    {purging, _Pid, _Mod}								-> % chase your tail
-      ?MODULE:file_loop(IO, ARG, Device);
-    {'EXIT', ExitPid, Reason}							->
-      file_loop_exit(IO, ARG, Device, ExitPid, Reason);
-    {stdin, Stdout, captln} when Stdout == IO#std.out	->
-      file_read_line(IO, ARG, Device);
-    Noise												->
-      file_noise(IO, ARG, Device, Noise)
-  end.
-
-file_loop_exit(IO, ARG, Device, ExitPid, Reason) ->
-  case ExitPid of
-    Stdin when Stdin == IO#std.in	->
-      ?DEBUG("~s: file_loop: ~p~n", [ARG#arg.cmd, Reason]), exit(ok);
-    _ 								->
-      ?MODULE:file_loop(IO, ARG, Device)
-  end.
-
-file_read_line(IO, ARG, Device) ->
-  case io:get_line(Device, "") of
-    eof		-> file:close(Device), exit(ok);
-    Line	-> ?STDOUT(Line), file_loop(IO, ARG, Device)
-  end.
-
-file_noise(IO, ARG, Device, Noise) ->
-  ?STDERR("~s: noise: ~p~n", [ARG#arg.cmd, Noise]),
-  file_loop(IO, ARG, Device).
-
 % Handle a line of input.
 do_line(IO, ARG, Line) ->
   case Line of
-    ".\n" when IO#std.stop	->
-      exit(ok);
-    eof						->
-      exit(ok);
-    _						->
-      do_procln(IO, ARG, Line)
+    ".\n" when IO#std.stop	-> exit(ok);
+    eof						-> exit(ok);
+    _						-> do_procln(IO, ARG, Line)
   end.
 
 % Process a line of dogo format input.
@@ -194,11 +147,11 @@ do_captln(IO, ARG) ->
 do_exit(IO, ARG, ExitPid, Reason) ->
   case ExitPid of
     Stdin when Stdin == IO#std.in	->
-	  case Reason of
-		ok			-> exit(ok);
-		{ok, What}	-> exit({ok, What});
-		_Else		-> exit({ARG#arg.cmd, Reason})
-	  end;
+      case Reason of
+        ok			-> exit(ok);
+        {ok, What}	-> exit({ok, What});
+        _Else		-> exit({ARG#arg.cmd, Reason})
+      end;
     _ 								->
       ?MODULE:loop(IO, ARG)
   end.
