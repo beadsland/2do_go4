@@ -1,6 +1,6 @@
-@todo refactor file read code to pose
 @todo test error reporting of new creat module
 @todo dogo: name process on file errors
+@todo refactor captln logic to pose_open
 @todo poseur: check for unmoduled loops
 @todo ARG agnostic
 @todo standardize use of ?ARGC

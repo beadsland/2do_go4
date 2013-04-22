@@ -52,6 +52,7 @@
 
 -import(gen_command).
 -import(re).
+-import(pose_open).
 
 %%
 %% Exported Functions
@@ -94,7 +95,7 @@ do_run(IO, ARG) ->
   ?STDOUT(Format, [?VERSION(?MODULE), self()]),
   case ARG#arg.v of
     []			-> do_captln(IO, ARG);
-    [File | _V]	-> ReadPid = dogo_creat:open_read(File),
+    [File | _V]	-> ReadPid = pose_open:read(File),
                    NewIO = ?IO(ReadPid, IO#std.out, IO#std.err),
                    do_captln(NewIO, ARG)
   end.
