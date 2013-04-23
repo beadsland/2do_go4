@@ -94,10 +94,12 @@ do_run(IO, ARG) ->
   Format = "Starting Dogo ~s list interpreter ~p~n",
   ?STDOUT(Format, [?VERSION(?MODULE), self()]),
   case ARG#arg.v of
-    []			-> do_captln(IO, ARG);
+    []			-> ?CAPTLN,
+				   ?MODULE:loop(IO, ARG);
     [File | _V]	-> ReadPid = pose_open:read(File),
                    NewIO = ?IO(ReadPid, IO#std.out, IO#std.err),
-                   do_captln(NewIO, ARG)
+                   ?CAPTLN(ReadPid),
+				   ?MODULE:loop(NewIO, ARG)
   end.
 
 %%
@@ -128,21 +130,16 @@ do_line(IO, ARG, Line) ->
   end.
 
 % Process a line of dogo format input.
-do_procln(IO, ARG, [$\n]) -> do_captln(IO, ARG);
+do_procln(IO, ARG, [$\n]) -> ?CAPTLN, ?MODULE:loop(IO, ARG);
 do_procln(IO, ARG, [Space | Rest]) when Space == 32; Space == $\t ->
   {ok, MP} = re:compile("^[\\t ]*\\n$"),
   case re:run(Rest, MP, [{capture, none}]) of
-    match	-> do_captln(IO, ARG); 			% ignore blank line
-    nomatch -> ?STDOUT(IO), do_captln(IO, ARG)
+    match	-> ?CAPTLN, ?MODULE:loop(IO, ARG); 	% ignore blank line
+    nomatch -> ?STDOUT(IO), ?CAPTLN, ?MODULE:loop(IO, ARG)
   end;
-do_procln(IO, ARG, [$# | _Rest]) -> do_captln(IO, ARG);
-do_procln(IO, ARG, Line) -> ?STDOUT(Line), do_captln(IO, ARG).
-
-% Send a message to capture another line from stdin.
-do_captln(IO, ARG) ->
-  Stdin = IO#std.in,
-  Stdin ! {stdin, self(), captln},
-  ?MODULE:loop(IO, ARG).
+do_procln(IO, ARG, [$# | _Rest]) -> ?CAPTLN, ?MODULE:loop(IO, ARG);
+do_procln(IO, ARG, Line) -> 
+  ?STDOUT(Line), ?CAPTLN, ?MODULE:loop(IO, ARG).
 
 % Handle process exit messages.
 do_exit(IO, ARG, ExitPid, Reason) ->
@@ -160,4 +157,5 @@ do_exit(IO, ARG, ExitPid, Reason) ->
 % Handle noise on the message queue.
 do_noise(IO, ARG, Noise) ->
   ?STDERR("~s: noise: ~p~n", [ARG#arg.cmd, Noise]),
-  do_captln(IO, ARG).
+  ?CAPTLN,
+  ?MODULE:loop(IO, ARG).

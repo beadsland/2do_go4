@@ -1,6 +1,3 @@
-@todo test error reporting of new creat module
-@todo dogo: name process on file errors
-@todo refactor captln logic to pose_open
 @todo poseur: check for unmoduled loops
 @todo ARG agnostic
 @todo standardize use of ?ARGC
@@ -8,6 +5,7 @@
 @todo edoc output 
 @todo edoc escape ampersands
 @todo new make todo rule
+@todo clear outstanding warnings
 @todo build out view plugin for eclipse
 @todo completion
 @todo eclipse view completion
