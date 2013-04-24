@@ -152,7 +152,7 @@ realname(File, Dir) ->
     {Port, {exit_status, N}}    -> 
       exit({realname, {exit_status, N}});
     {Port, {data, Data}}        ->
-      receive {Port, {exit_status, 0}} ->
+      receive {Port, {exit_status, 0}}  ->
         io_lib:format("~s~s~s", [trim(Data), PathSep, filename:basename(File)])
       end
   end.
