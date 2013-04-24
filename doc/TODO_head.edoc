@@ -1,8 +1,8 @@
-@todo stderr data end with \n
-@todo enoent from readfile
-@todo file not stdin
-@todo test with stdin only
-@todo test with file only
-@todo prune extranous Src parameter
-@todo refactor file read code to pose
-@todo ...plus 18 more (see TODO.edoc)
+@todo refactor realpath
+@todo avoid file transclusion infinite loops
+@todo cwd from commandline
+@todo edoc output 
+@todo edoc escape ampersands
+@todo new make todo rule
+@todo clear outstanding warnings
+@todo ...plus 13 more (see TODO.edoc)
