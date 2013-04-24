@@ -26,7 +26,7 @@
 %% @author Beads D. Land-Trujillo [http://twitter.com/beadsland]
 %% @copyright 2013 Beads D. Land-Trujillo
 
-%% @version 0.0.6
+%% @version 0.0.7
 
 -define(module, dogo).
 
@@ -40,7 +40,7 @@
 -endif.
 % END POSE PACKAGE PATTERN
 
--version("0.0.6").
+-version("0.0.7").
 
 %%
 %% Include files
@@ -56,6 +56,10 @@
 -import(re).
 -import(file).
 -import(filename).
+
+-import(os).
+-import(string).
+-import(io_lib).
 
 %%
 %% Exported Functions
@@ -108,13 +112,57 @@ do_run(IO, ARG) ->
                    end
   end.
 
-transclude(IO, {Cmd, [Last | Trans], Status}, RelFile) ->
-  RootPath = filename:dirname(Last),
-  AbsFile = filename:absname(RelFile, RootPath),
-  ReadPid = pose_open:read(AbsFile),
+transclude(IO, {Cmd, [Last | Trans], Status}, File) ->
+  Dir = filename:dirname(Last),
+  RealFile = realname(File, Dir),
+  ReadPid = pose_open:read(RealFile),
   NewIO = ?IO(ReadPid, IO#std.out, IO#std.err),
   ?CAPTLN(ReadPid),
-  ?MODULE:loop(NewIO, {Cmd, [AbsFile, Last] ++ Trans, [IO#std.in | Status]}).
+  ?MODULE:loop(NewIO, {Cmd, [RealFile, Last] ++ Trans, [IO#std.in | Status]}).
+
+realname(File, Dir) ->
+  AbsFile = filename:absname(File, Dir),
+  AbsDir = filename:dirname(AbsFile),
+  {PathSep, CmdSep, Pwd} = os_syntax(),
+  [First | Rest] = string:tokens(AbsDir, "/\\"),
+  case First of
+    []  -> [Second | [Third | [Fourth | Remain]]] = Rest,
+           case Second of
+             []   -> Format = "pushd \\\\~s\\~s & cd \\",                % UNC
+                     Pushd = io_lib:format(Format, [Third, Fourth]),
+                     Path = Remain;
+             _    -> Pushd = "cd \\",                                    % UNIX
+                     Path = Rest            
+           end;
+    _   -> Pushd = io_lib:format("pushd ~s & cd /", [First]),            % Win32
+           Path = Rest
+  end,
+  case os:type() of
+    {win32, _}  -> Shell = trim(os:cmd("echo %ComSpec%")), COpt = "/C";
+    {unix, _}   -> Shell = "/bin/sh", COpt = "-c"
+  end,
+
+  CdSeq = [io_lib:format("cd ~s", [X]) || X <- Path],  
+  CdCmd = [io_lib:format("~s ~s ", [X, CmdSep]) || X <- [Pushd | CdSeq]],
+  Cmd = io_lib:format("~s~s", [CdCmd, Pwd]),
+  
+  Args = {args, [io_lib:format("~s \"~s\"", [COpt, Cmd])]},
+  Port = open_port({spawn_executable, Shell}, [exit_status, Args]),
+  receive
+    {Port, {exit_status, N}}    -> 
+      exit({realname, {exit_status, N}});
+    {Port, {data, Data}}        ->
+      receive {Port, {exit_status, 0}} ->
+        io_lib:format("~s~s~s", [trim(Data), PathSep, filename:basename(File)])
+      end
+  end.
+
+os_syntax() ->
+  case os:type() of
+    {unix, _}   -> {"/", ";", "pwd"}; 
+    {win32, _}  -> {"\\", "&", "chdir "}; % not recognized unless trailing space 
+    OS          -> exit({'unknown os', OS})
+  end.
 
 %%
 %% Local Functions
@@ -153,7 +201,7 @@ do_procln(IO, State, [Space | Rest]) when Space == 32; Space == $\t ->
   end;
 do_procln(IO, State, [$# | _Rest]) -> ?CAPTLN, ?MODULE:loop(IO, State);
 do_procln(IO, State, [$& | Rest]) ->
-  File = trim(Rest), 
+  File = trim(Rest),
   transclude(IO, State, File), 
   ?CAPTLN, 
   ?MODULE:loop(IO, State);
@@ -163,7 +211,7 @@ do_procln(IO, State, Line) ->
 trim([$\s | String]) -> trim(String);
 trim([$\t | String]) -> trim(String);
 trim(String) ->
-  Pattern = "^(.*[^\\s\\t\\n])[\\s\\t\\n]*$",
+  Pattern = "^(.*[^\\s\\t\\n\\r])[\\s\\t\\n\\r]*$",
   Result = re:run(String, Pattern, [{capture, [1], list}]),
   case Result of
     nomatch				-> exit({trim, String});
@@ -186,7 +234,7 @@ do_exit(IO, {Cmd, _Trans, _Stack}, ExitPid, Reason) when IO#std.in==ExitPid ->
 do_exit(IO, State, _ExitPid, _Reason) -> ?MODULE:loop(IO, State).
 
 % Handle noise on the message queue.
-do_noise(IO, ARG, Noise) ->
-  ?STDERR("~s: noise: ~p~n", [ARG#arg.cmd, Noise]),
+do_noise(IO, {Cmd, Trans, Stack}, Noise) ->
+  ?STDERR("~s: noise: ~p~n", [Cmd, Noise]),
   ?CAPTLN,
-  ?MODULE:loop(IO, ARG).
+  ?MODULE:loop(IO, {Cmd, Trans, Stack}).
