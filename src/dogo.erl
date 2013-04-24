@@ -26,7 +26,7 @@
 %% @author Beads D. Land-Trujillo [http://twitter.com/beadsland]
 %% @copyright 2013 Beads D. Land-Trujillo
 
-%% @version 0.0.5
+%% @version 0.0.6
 
 -define(module, dogo).
 
@@ -40,7 +40,7 @@
 -endif.
 % END POSE PACKAGE PATTERN
 
--version("0.0.5").
+-version("0.0.6").
 
 %%
 %% Include files
@@ -51,8 +51,11 @@
 -include_lib("pose/include/macro.hrl").
 
 -import(gen_command).
--import(re).
 -import(pose_open).
+
+-import(re).
+-import(file).
+-import(filename).
 
 %%
 %% Exported Functions
@@ -95,64 +98,92 @@ do_run(IO, ARG) ->
   ?STDOUT(Format, [?VERSION(?MODULE), self()]),
   case ARG#arg.v of
     []			-> ?CAPTLN,
-				   ?MODULE:loop(IO, ARG);
-    [File | _V]	-> ReadPid = pose_open:read(File),
-                   NewIO = ?IO(ReadPid, IO#std.out, IO#std.err),
-                   ?CAPTLN(ReadPid),
-				   ?MODULE:loop(NewIO, ARG)
+                   ?MODULE:loop(IO, {ARG#arg.cmd, [stdin], []});
+    [File | _V]	-> case file:get_cwd() of
+                     {ok, Dir}			->
+                       transclude(IO, {ARG#arg.cmd, [Dir ++ "/."], []}, File), 
+                       exit(ok);
+                     {error, Reason}	->
+                       exit({ARG#arg.cmd, {cwd, Reason}})
+                   end
   end.
+
+transclude(IO, {Cmd, [Last | Trans], Status}, RelFile) ->
+  RootPath = filename:dirname(Last),
+  AbsFile = filename:absname(RelFile, RootPath),
+  ReadPid = pose_open:read(AbsFile),
+  NewIO = ?IO(ReadPid, IO#std.out, IO#std.err),
+  ?CAPTLN(ReadPid),
+  ?MODULE:loop(NewIO, {Cmd, [AbsFile, Last] ++ Trans, [IO#std.in | Status]}).
 
 %%
 %% Local Functions
 %%
 
 %%@private Export to allow for hotswap.
-loop(IO, ARG) ->
+loop(IO, State) ->
   receive
     {purging, _Pid, _Mod}							-> % chase your tail
-      ?MODULE:loop(IO, ARG);
+      ?MODULE:loop(IO, State);
     {'EXIT', ExitPid, Reason}						->
-      do_exit(IO, ARG, ExitPid, Reason);
+      do_exit(IO, State, ExitPid, Reason);
     {stdout, Stdin, Line} when Stdin == IO#std.in	->
-      do_line(IO, ARG, Line);
+      do_line(IO, State, Line);
     {stderr, Stdin, Data} when Stdin == IO#std.in	->
       ?STDERR(Data);
     Noise											->
-      do_noise(IO, ARG, Noise)
+      do_noise(IO, State, Noise)
   end.
 
 % Handle a line of input.
-do_line(IO, ARG, Line) ->
+do_line(IO, State, Line) ->
   case Line of
     ".\n" when IO#std.stop	-> exit(ok);
     eof						-> exit(ok);
-    _						-> do_procln(IO, ARG, Line)
+    _						-> do_procln(IO, State, Line)
   end.
 
 % Process a line of dogo format input.
-do_procln(IO, ARG, [$\n]) -> ?CAPTLN, ?MODULE:loop(IO, ARG);
-do_procln(IO, ARG, [Space | Rest]) when Space == 32; Space == $\t ->
+do_procln(IO, State, [$\n]) -> ?CAPTLN, ?MODULE:loop(IO, State);
+do_procln(IO, State, [Space | Rest]) when Space == 32; Space == $\t ->
   {ok, MP} = re:compile("^[\\t ]*\\n$"),
   case re:run(Rest, MP, [{capture, none}]) of
-    match	-> ?CAPTLN, ?MODULE:loop(IO, ARG); 	% ignore blank line
-    nomatch -> ?STDOUT(IO), ?CAPTLN, ?MODULE:loop(IO, ARG)
+    match	-> ?CAPTLN, ?MODULE:loop(IO, State); 	% ignore blank line
+    nomatch -> ?STDOUT(IO), ?CAPTLN, ?MODULE:loop(IO, State)
   end;
-do_procln(IO, ARG, [$# | _Rest]) -> ?CAPTLN, ?MODULE:loop(IO, ARG);
-do_procln(IO, ARG, Line) -> 
-  ?STDOUT(Line), ?CAPTLN, ?MODULE:loop(IO, ARG).
+do_procln(IO, State, [$# | _Rest]) -> ?CAPTLN, ?MODULE:loop(IO, State);
+do_procln(IO, State, [$& | Rest]) ->
+  File = trim(Rest), 
+  transclude(IO, State, File), 
+  ?CAPTLN, 
+  ?MODULE:loop(IO, State);
+do_procln(IO, State, Line) ->
+  ?STDOUT("~s~n", [trim(Line)]), ?CAPTLN, ?MODULE:loop(IO, State).
+
+trim([$\s | String]) -> trim(String);
+trim([$\t | String]) -> trim(String);
+trim(String) ->
+  Pattern = "^(.*[^\\s\\t\\n])[\\s\\t\\n]*$",
+  Result = re:run(String, Pattern, [{capture, [1], list}]),
+  case Result of
+    nomatch				-> exit({trim, String});
+    {match, [Match]}	-> Match
+  end.
 
 % Handle process exit messages.
-do_exit(IO, ARG, ExitPid, Reason) ->
-  case ExitPid of
-    Stdin when Stdin == IO#std.in	->
-      case Reason of
-        ok			-> exit(ok);
-        {ok, What}	-> exit({ok, What});
-        _Else		-> exit({ARG#arg.cmd, Reason})
-      end;
-    _ 								->
-      ?MODULE:loop(IO, ARG)
-  end.
+do_exit(IO, {Cmd, _Trans, []}, ExitPid, Reason) when IO#std.in==ExitPid ->
+  case Reason of
+    ok			-> exit(ok);
+    {ok, What}	-> exit({ok, What});
+    _Else		-> exit({Cmd, Reason})
+  end;
+do_exit(IO, {Cmd, _Trans, _Stack}, ExitPid, Reason) when IO#std.in==ExitPid ->
+  case Reason of
+    ok			-> ok;
+    {ok, What}	-> {ok, What};
+    _Else		-> exit({Cmd, Reason})
+  end;
+do_exit(IO, State, _ExitPid, _Reason) -> ?MODULE:loop(IO, State).
 
 % Handle noise on the message queue.
 do_noise(IO, ARG, Noise) ->

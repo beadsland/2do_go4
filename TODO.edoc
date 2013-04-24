@@ -1,7 +1,6 @@
-@todo poseur: check for unmoduled loops
-@todo ARG agnostic
-@todo standardize use of ?ARGC
-@todo file transclusion
+@todo avoid file transclusion infinite loops
+@todo clean abspath
+@todo cwd from commandline
 @todo edoc output 
 @todo edoc escape ampersands
 @todo new make todo rule
