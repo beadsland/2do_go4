@@ -18,7 +18,7 @@
 # by brackets replaced by your own identifying information.
 # "Portions Copyright [year] [name of copyright owner]"
 # 
-# Copyright 2013 Beads D. Land-Trujillo.  All Rights Reserved.
+# Copyright 2012, 2013 Beads D. Land-Trujillo.  All Rights Reserved.
 # -----------------------------------------------------------------------
 # CDDL HEADER END
 
@@ -91,11 +91,12 @@ ONTEST	= $(PING) www.google.com 2>&1 >/dev/null \
 ONBOOL	= (test "$(ONRESULT)" == "online" \
 			&& echo yes || echo no)
 
-ifneq ($(IS_SUBMAKE),true)	   # if submake, online in subpass
+ifneq ($(IS_SUBMAKE),true)	   	# if submake, online in subpass
    ONRESULT = $(shell $(ONTEST))
    $(info Working $(ONRESULT))
    ONLINE = $(shell $(ONBOOL))
 endif
+SUBPASS += ONLINE="$(ONLINE)"	# always pass this on
 
 #
 # Macros for commands
@@ -124,19 +125,25 @@ COMMAKE		= $(SUBMAKE:_param_=-f include/Common.mk $@)
 #
 
 ifndef DEPS
-	DEPS = 		deps
+	DEPS = deps
+else
+	SUBPASS += DEPS="$(DEPS)"		# only pass on if redefined
 endif
-SUBPASS =	DEPS="$(DEPS)" ONLINE="$(ONLINE)"
 
 ifndef POSEBIN
-	POSEBIN = 	$(DEPS)/pose/ebin
+	POSEBIN = $(DEPS)/pose/ebin
+else
+	SUBPASS += POSEBIN="$(POSEBIN)"	# only pass on if redefined
 endif
 
+GOOD_DEPS = $(shell test -d ../pose -a -d ../superl && echo .. || $(DEPS))
 ERL	=		erl -noshell -i $(DEPS) -deps $(DEPS) -pa $(POSEBIN)
 
 POSURE	=	-s pose start posure
 ifndef SUPERL
-	SUPERL	=	-s pose start superl
+	SUPERL = -s pose start superl
+else
+	SUBPASS += SUPERL="$(SUPERL)" 	# only pass on if redefined
 endif
 NOTERM	=	-s pose start noterm
 STOP	=	-s init stop
