@@ -15,11 +15,11 @@ __References__* This is a subproject of the
 
 __<font color="red">To do</font>__
 <br></br>
-* <font color="red">macro version include dev
+* <font color="red">refactor realpath
 </font>
-* <font color="red">file not stdin
+* <font color="red">avoid file transclusion infinite loops
 </font>
-* <font color="red">file transclusion
+* <font color="red">cwd from commandline
 </font>
 * <font color="red">edoc output 
 </font>
@@ -27,9 +27,9 @@ __<font color="red">To do</font>__
 </font>
 * <font color="red">new make todo rule
 </font>
-* <font color="red">build out view plugin for eclipse
+* <font color="red">clear outstanding warnings
 </font>
-* <font color="red">...plus 12 more (see TODO.edoc)
+* <font color="red">...plus 13 more (see TODO.edoc)
 </font>
 This is to be an alternative to traditional task management
   software.  Modeled on the old `gopher` protocol, it
