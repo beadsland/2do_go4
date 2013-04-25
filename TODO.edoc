@@ -1,6 +1,5 @@
-@todo trim: error handling
-@todo cat: error handling
-@todo dogo: error handling
+@todo realname: The directory name is invalid
+@todo file_open: error handling
 @todo realpath: functional rewrite
 @todo realpath: error handling
 @todo realpath: unc from drive letter

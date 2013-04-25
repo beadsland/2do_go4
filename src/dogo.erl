@@ -26,7 +26,7 @@
 %% @author Beads D. Land-Trujillo [http://twitter.com/beadsland]
 %% @copyright 2013 Beads D. Land-Trujillo
 
-%% @version 0.0.7
+%% @version 0.0.8
 
 -define(module, dogo).
 
@@ -40,7 +40,7 @@
 -endif.
 % END POSE PACKAGE PATTERN
 
--version("0.0.7").
+-version("0.0.8").
 
 %%
 %% Include files
@@ -101,86 +101,83 @@ run(IO, ARG, ENV) -> gen_command:run(IO, ARG, ENV, ?MODULE).
 do_run(IO, ARG) ->
   Format = "Starting Dogo ~s list interpreter ~p~n",
   ?STDOUT(Format, [?VERSION(?MODULE), self()]),
-  case ARG#arg.v of
-    []			-> ?CAPTLN,
-                   ?MODULE:loop(IO, {ARG#arg.cmd, [stdin], []});
-    [File | _V]	-> case file:get_cwd() of
-                     {ok, Dir}			->
-                       transclude(IO, {ARG#arg.cmd, [Dir ++ "/."], []}, File), 
-                       exit(ok);
-                     {error, Reason}	->
-                       exit({ARG#arg.cmd, {cwd, Reason}})
-                   end
+  case do_run(IO, ARG, ?ARGV(1)) of
+    ok              -> exit(ok);
+    {error, Reason} -> exit({ARG#arg.cmd, Reason})
   end.
+
+do_run(IO, _ARG, undefined) -> transclude(IO, [stdin]);
+do_run(IO, _ARG, File) -> 
+  Canon = pose_file:realname(File), 
+  transclude(IO, [{Canon, File}]).
 
 %%
 %% Local Functions
 %%
 
 %%@private Export to allow for hotswap.
-loop(IO, State) ->
+loop(IO, Trans) ->
   receive
     {purging, _Pid, _Mod}							-> % chase your tail
-      ?MODULE:loop(IO, State);
+      ?MODULE:loop(IO, Trans);
     {'EXIT', ExitPid, Reason}						->
-      do_exit(IO, State, ExitPid, Reason);
+      do_exit(IO, Trans, ExitPid, Reason);
     {stdout, Stdin, Line} when Stdin == IO#std.in	->
-      do_line(IO, State, Line);
+      do_line(IO, Trans, Line);
     {stderr, Stdin, Data} when Stdin == IO#std.in	->
       ?STDERR(Data);
     Noise											->
-      do_noise(IO, State, Noise)
+      do_noise(IO, Trans, Noise)
   end.
 
-transclude(IO, {Cmd, [Last | Trans], Status}, File) ->
-  RealFile = pose_file:realname(File, filename:dirname(Last)),
-  ReadPid = pose_open:read(RealFile),
-  NewIO = ?IO(ReadPid, IO#std.out, IO#std.err),
-  ?CAPTLN(ReadPid),
-  ?MODULE:loop(NewIO, {Cmd, [RealFile, Last] ++ Trans, [IO#std.in | Status]}).
-
 % Handle a line of input.
-do_line(IO, State, Line) ->
+do_line(IO, Trans, Line) ->
   case Line of
-    ".\n" when IO#std.stop	-> exit(ok);
-    eof						-> exit(ok);
-    _						-> do_procln(IO, State, Line)
+    ".\n" when IO#std.stop	-> ok;
+    eof						-> ok;
+    _						-> do_procln(IO, Trans, Line)
   end.
 
 % Process a line of dogo format input.
-do_procln(IO, State, [$\n]) -> ?CAPTLN, ?MODULE:loop(IO, State);
-do_procln(IO, State, [Space | Rest]) when Space == 32; Space == $\t ->
-  {ok, MP} = re:compile("^[\\t ]*\\n$"),
-  case re:run(Rest, MP, [{capture, none}]) of
-    match	-> ?CAPTLN, ?MODULE:loop(IO, State); 	% ignore blank line
-    nomatch -> ?STDOUT(IO), ?CAPTLN, ?MODULE:loop(IO, State)
-  end;
-do_procln(IO, State, [$# | _Rest]) -> ?CAPTLN, ?MODULE:loop(IO, State);
-do_procln(IO, State, [$& | Rest]) ->
-  File = pose_file:trim(Rest),
-  transclude(IO, State, File), 
-  ?CAPTLN, 
-  ?MODULE:loop(IO, State);
-do_procln(IO, State, Line) ->
-  ?STDOUT("~s~n", [pose_file:trim(Line)]), ?CAPTLN, ?MODULE:loop(IO, State).
+do_procln(IO, Trans, [$\n]) -> ?CAPTLN, ?MODULE:loop(IO, Trans);
+do_procln(IO, Trans, [$# | _Rest]) -> ?CAPTLN, ?MODULE:loop(IO, Trans);
+do_procln(IO, Trans, [$\s | Rest]) -> do_procln(IO, Trans, Rest);
+do_procln(IO, Trans, [$\t | Rest]) -> do_procln(IO, Trans, Rest);
+do_procln(IO, [stdin], [$& | Rest]) ->
+  NewFile = pose_file:trim(Rest),
+  NewCanon = pose_file:realname(NewFile),
+  NewTrans = [{NewCanon, NewFile} | [stdin]],
+  do_transln(IO, NewTrans);
+do_procln(IO, Trans, [$& | Rest]) ->
+  [{Canon, _File} | _Trans] = Trans,
+  NewFile = pose_file:trim(Rest),
+  NewCanon = pose_file:realname(NewFile, Canon),
+  NewTrans = [{NewCanon, NewFile} | Trans],
+  do_transln(IO, NewTrans);
+do_procln(IO, Trans, Line) ->
+  ?STDOUT("~s~n", [pose_file:trim(Line)]), 
+  ?CAPTLN, ?MODULE:loop(IO, Trans).
+
+% Process a transclude line from dogo input.
+do_transln(IO, Trans) ->
+  case transclude(IO, Trans) of
+    ok              -> ?CAPTLN, ?MODULE:loop(IO, Trans);
+    {error, Reason} -> {error, Reason}
+  end.
+
+% Open new file process, and swap it in as new stdin.
+transclude(IO, [stdin]) -> ?CAPTLN, ?MODULE:loop(IO, [stdin]);
+transclude(IO, [{Canon, File} | Trans]) ->
+  ReadPid = pose_open:read(Canon),
+  NewIO = ?IO(ReadPid, IO#std.out, IO#std.err),
+  ?CAPTLN(ReadPid),
+  ?MODULE:loop(NewIO, [{Canon, File} | Trans]).
 
 % Handle process exit messages.
-do_exit(IO, {Cmd, _Trans, []}, ExitPid, Reason) when IO#std.in==ExitPid ->
-  case Reason of
-    ok			-> exit(ok);
-    {ok, What}	-> exit({ok, What});
-    _Else		-> exit({Cmd, Reason})
-  end;
-do_exit(IO, {Cmd, _Trans, _Stack}, ExitPid, Reason) when IO#std.in==ExitPid ->
-  case Reason of
-    ok			-> ok;
-    {ok, What}	-> {ok, What};
-    _Else		-> exit({Cmd, Reason})
-  end;
-do_exit(IO, State, _ExitPid, _Reason) -> ?MODULE:loop(IO, State).
+do_exit(IO, _Trans, ExitPid, Reason) when ExitPid==IO#std.in -> Reason;
+do_exit(IO, Trans, _ExitPid, _Reason) -> ?MODULE:loop(IO, Trans).
 
 % Handle noise on the message queue.
-do_noise(IO, {Cmd, Trans, Stack}, Noise) ->
-  ?STDERR("~s: noise: ~p~n", [Cmd, Noise]),
-  ?CAPTLN,
-  ?MODULE:loop(IO, {Cmd, Trans, Stack}).
+do_noise(IO, Trans, Noise) ->
+  ?STDERR("~s: noise: ~p~n", [get(command), Noise]),
+  ?CAPTLN, ?MODULE:loop(IO, Trans).
