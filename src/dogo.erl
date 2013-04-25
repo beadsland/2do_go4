@@ -56,6 +56,7 @@
 -import(re).
 -import(file).
 -import(filename).
+-import(pose_file).
 
 -import(os).
 -import(string).
@@ -93,7 +94,7 @@ start(Param) -> gen_command:start(Param, ?MODULE).
 run(IO, ARG, ENV) -> gen_command:run(IO, ARG, ENV, ?MODULE).
 
 %%
-%% Callback Functions
+%% Callback Function
 %%
 
 %% @private Callback entry point for gen_command behaviour.
@@ -110,58 +111,6 @@ do_run(IO, ARG) ->
                      {error, Reason}	->
                        exit({ARG#arg.cmd, {cwd, Reason}})
                    end
-  end.
-
-transclude(IO, {Cmd, [Last | Trans], Status}, File) ->
-  Dir = filename:dirname(Last),
-  RealFile = realname(File, Dir),
-  ReadPid = pose_open:read(RealFile),
-  NewIO = ?IO(ReadPid, IO#std.out, IO#std.err),
-  ?CAPTLN(ReadPid),
-  ?MODULE:loop(NewIO, {Cmd, [RealFile, Last] ++ Trans, [IO#std.in | Status]}).
-
-realname(File, Dir) ->
-  AbsFile = filename:absname(File, Dir),
-  AbsDir = filename:dirname(AbsFile),
-  {PathSep, CmdSep, Pwd} = os_syntax(),
-  [First | Rest] = string:tokens(AbsDir, "/\\"),
-  case First of
-    []  -> [Second | [Third | [Fourth | Remain]]] = Rest,
-           case Second of
-             []   -> Format = "pushd \\\\~s\\~s & cd \\",                % UNC
-                     Pushd = io_lib:format(Format, [Third, Fourth]),
-                     Path = Remain;
-             _    -> Pushd = "cd \\",                                    % UNIX
-                     Path = Rest            
-           end;
-    _   -> Pushd = io_lib:format("pushd ~s & cd /", [First]),            % Win32
-           Path = Rest
-  end,
-  case os:type() of
-    {win32, _}  -> Shell = trim(os:cmd("echo %ComSpec%")), COpt = "/C";
-    {unix, _}   -> Shell = "/bin/sh", COpt = "-c"
-  end,
-
-  CdSeq = [io_lib:format("cd ~s", [X]) || X <- Path],  
-  CdCmd = [io_lib:format("~s ~s ", [X, CmdSep]) || X <- [Pushd | CdSeq]],
-  Cmd = io_lib:format("~s~s", [CdCmd, Pwd]),
-  
-  Args = {args, [io_lib:format("~s \"~s\"", [COpt, Cmd])]},
-  Port = open_port({spawn_executable, Shell}, [exit_status, Args]),
-  receive
-    {Port, {exit_status, N}}    -> 
-      exit({realname, {exit_status, N}});
-    {Port, {data, Data}}        ->
-      receive {Port, {exit_status, 0}}  ->
-        io_lib:format("~s~s~s", [trim(Data), PathSep, filename:basename(File)])
-      end
-  end.
-
-os_syntax() ->
-  case os:type() of
-    {unix, _}   -> {"/", ";", "pwd"}; 
-    {win32, _}  -> {"\\", "&", "chdir "}; % not recognized unless trailing space 
-    OS          -> exit({'unknown os', OS})
   end.
 
 %%
@@ -183,6 +132,13 @@ loop(IO, State) ->
       do_noise(IO, State, Noise)
   end.
 
+transclude(IO, {Cmd, [Last | Trans], Status}, File) ->
+  RealFile = pose_file:realname(File, filename:dirname(Last)),
+  ReadPid = pose_open:read(RealFile),
+  NewIO = ?IO(ReadPid, IO#std.out, IO#std.err),
+  ?CAPTLN(ReadPid),
+  ?MODULE:loop(NewIO, {Cmd, [RealFile, Last] ++ Trans, [IO#std.in | Status]}).
+
 % Handle a line of input.
 do_line(IO, State, Line) ->
   case Line of
@@ -201,22 +157,12 @@ do_procln(IO, State, [Space | Rest]) when Space == 32; Space == $\t ->
   end;
 do_procln(IO, State, [$# | _Rest]) -> ?CAPTLN, ?MODULE:loop(IO, State);
 do_procln(IO, State, [$& | Rest]) ->
-  File = trim(Rest),
+  File = pose_file:trim(Rest),
   transclude(IO, State, File), 
   ?CAPTLN, 
   ?MODULE:loop(IO, State);
 do_procln(IO, State, Line) ->
-  ?STDOUT("~s~n", [trim(Line)]), ?CAPTLN, ?MODULE:loop(IO, State).
-
-trim([$\s | String]) -> trim(String);
-trim([$\t | String]) -> trim(String);
-trim(String) ->
-  Pattern = "^(.*[^\\s\\t\\n\\r])[\\s\\t\\n\\r]*$",
-  Result = re:run(String, Pattern, [{capture, [1], list}]),
-  case Result of
-    nomatch				-> exit({trim, String});
-    {match, [Match]}	-> Match
-  end.
+  ?STDOUT("~s~n", [pose_file:trim(Line)]), ?CAPTLN, ?MODULE:loop(IO, State).
 
 % Handle process exit messages.
 do_exit(IO, {Cmd, _Trans, []}, ExitPid, Reason) when IO#std.in==ExitPid ->

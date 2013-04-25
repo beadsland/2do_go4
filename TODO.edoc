@@ -1,4 +1,9 @@
-@todo refactor realpath
+@todo trim: error handling
+@todo cat: error handling
+@todo dogo: error handling
+@todo realpath: functional rewrite
+@todo realpath: error handling
+@todo realpath: unc from drive letter
 @todo avoid file transclusion infinite loops
 @todo cwd from commandline
 @todo edoc output 
