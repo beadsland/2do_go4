@@ -26,7 +26,7 @@
 %% @author Beads D. Land-Trujillo [http://twitter.com/beadsland]
 %% @copyright 2013 Beads D. Land-Trujillo
 
-%% @version 0.0.8
+%% @version 0.0.9
 
 -define(module, dogo).
 
@@ -40,7 +40,7 @@
 -endif.
 % END POSE PACKAGE PATTERN
 
--version("0.0.8").
+-version("0.0.9").
 
 %%
 %% Include files
@@ -108,7 +108,7 @@ do_run(IO, ARG) ->
 
 do_run(IO, _ARG, undefined) -> transclude(IO, [stdin]);
 do_run(IO, _ARG, File) -> 
-  Canon = pose_file:realname(File), 
+  Canon = pose_file:realname(IO, File), 
   transclude(IO, [{Canon, File}]).
 
 %%
@@ -145,13 +145,13 @@ do_procln(IO, Trans, [$\s | Rest]) -> do_procln(IO, Trans, Rest);
 do_procln(IO, Trans, [$\t | Rest]) -> do_procln(IO, Trans, Rest);
 do_procln(IO, [stdin], [$& | Rest]) ->
   NewFile = pose_file:trim(Rest),
-  NewCanon = pose_file:realname(NewFile),
+  NewCanon = pose_file:realname(IO, NewFile),
   NewTrans = [{NewCanon, NewFile} | [stdin]],
   do_transln(IO, NewTrans);
 do_procln(IO, Trans, [$& | Rest]) ->
   [{Canon, _File} | _Trans] = Trans,
   NewFile = pose_file:trim(Rest),
-  NewCanon = pose_file:realname(NewFile, Canon),
+  NewCanon = pose_file:realname(IO, NewFile, Canon),
   NewTrans = [{NewCanon, NewFile} | Trans],
   do_transln(IO, NewTrans);
 do_procln(IO, Trans, Line) ->
