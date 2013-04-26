@@ -1,8 +1,8 @@
-@todo refactor realpath
+@tode pose realname and cleanup
+@todo realpath: unc from drive letter
 @todo avoid file transclusion infinite loops
 @todo cwd from commandline
 @todo edoc output 
 @todo edoc escape ampersands
 @todo new make todo rule
-@todo clear outstanding warnings
-@todo ...plus 13 more (see TODO.edoc)
+@todo ...plus 14 more (see TODO.edoc)

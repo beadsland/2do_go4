@@ -1,7 +1,4 @@
-@todo realname: The directory name is invalid
-@todo file_open: error handling
-@todo realpath: functional rewrite
-@todo realpath: error handling
+@tode pose realname and cleanup
 @todo realpath: unc from drive letter
 @todo avoid file transclusion infinite loops
 @todo cwd from commandline

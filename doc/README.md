@@ -15,7 +15,7 @@ __References__* This is a subproject of the
 
 __<font color="red">To do</font>__
 <br></br>
-* <font color="red">refactor realpath
+* <font color="red">realpath: unc from drive letter
 </font>
 * <font color="red">avoid file transclusion infinite loops
 </font>
@@ -27,9 +27,7 @@ __<font color="red">To do</font>__
 </font>
 * <font color="red">new make todo rule
 </font>
-* <font color="red">clear outstanding warnings
-</font>
-* <font color="red">...plus 13 more (see TODO.edoc)
+* <font color="red">...plus 14 more (see TODO.edoc)
 </font>
 This is to be an alternative to traditional task management
   software.  Modeled on the old `gopher` protocol, it
