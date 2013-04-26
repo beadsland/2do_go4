@@ -15,6 +15,8 @@ __References__* This is a subproject of the
 
 __<font color="red">To do</font>__
 <br></br>
+* <font color="red">pose realname and cleanup
+</font>
 * <font color="red">realpath: unc from drive letter
 </font>
 * <font color="red">avoid file transclusion infinite loops

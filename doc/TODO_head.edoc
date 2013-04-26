@@ -1,4 +1,4 @@
-@tode pose realname and cleanup
+@todo pose realname and cleanup
 @todo realpath: unc from drive letter
 @todo avoid file transclusion infinite loops
 @todo cwd from commandline
