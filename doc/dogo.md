@@ -11,7 +11,7 @@ Rudimentary 2do_go4 interpreter.
 
 Copyright (c) 2013 Beads D. Land-Trujillo
 
-__Version:__ 0.0.7
+__Version:__ 0.0.8
 
 __Behaviours:__ [`gen_command`](gen_command.md).
 
