@@ -46,7 +46,7 @@
 %% Include files
 %%
 
--define(debug, true).
+%-define(debug, true).
 -include_lib("pose/include/interface.hrl").
 -include_lib("pose/include/macro.hrl").
 
@@ -107,10 +107,12 @@ do_run(IO, ARG) ->
   end.
 
 do_run(IO, _ARG, undefined) -> transclude(IO, [stdin]);
-do_run(IO, _ARG, File) -> 
-  Canon = pose_file:realname(IO, File), 
-  transclude(IO, [{Canon, File}]).
-
+do_run(IO, _ARG, File) ->
+  case pose_file:realname(File) of
+    {error, Reason} -> {error, {realname, Reason}};
+    {ok, Canon}     -> transclude(IO, [{Canon, File}])
+  end.
+    
 %%
 %% Local Functions
 %%
@@ -145,15 +147,19 @@ do_procln(IO, Trans, [$\s | Rest]) -> do_procln(IO, Trans, Rest);
 do_procln(IO, Trans, [$\t | Rest]) -> do_procln(IO, Trans, Rest);
 do_procln(IO, [stdin], [$& | Rest]) ->
   NewFile = pose_file:trim(Rest),
-  NewCanon = pose_file:realname(IO, NewFile),
-  NewTrans = [{NewCanon, NewFile} | [stdin]],
-  do_transln(IO, NewTrans);
+  case pose_file:realname(NewFile) of
+    {error, Reason} -> {error, {realname, Reason}};
+    {ok, NewCanon}  -> NewTrans = [{NewCanon, NewFile} | [stdin]],
+                       do_transln(IO, NewTrans)
+  end;
 do_procln(IO, Trans, [$& | Rest]) ->
   [{Canon, _File} | _Trans] = Trans,
   NewFile = pose_file:trim(Rest),
-  NewCanon = pose_file:realname(IO, NewFile, Canon),
-  NewTrans = [{NewCanon, NewFile} | Trans],
-  do_transln(IO, NewTrans);
+  case pose_file:realname(NewFile, filename:dirname(Canon)) of
+    {error, Reason} -> {error, {realname, Reason}};
+    {ok, NewCanon}  -> NewTrans = [{NewCanon, NewFile} | Trans],
+                       do_transln(IO, NewTrans) 
+  end;
 do_procln(IO, Trans, Line) ->
   ?STDOUT("~s~n", [pose_file:trim(Line)]), 
   ?CAPTLN, ?MODULE:loop(IO, Trans).
