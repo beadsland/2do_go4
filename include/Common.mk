@@ -28,7 +28,7 @@ include include/Header.mk
 # All good rules
 #
 
-.PHONY:	all good todo docs compile current neat clean push make docup
+.PHONY:	all good todo docs compile current neat force clean push make docup
 
 all:		push compile good
 
@@ -59,7 +59,7 @@ README.md:	doc/TODO_head.edoc doc/overview.edoc src/overview.hrl
 	@$(CROWBAR:_cmds_=doc)
 
 doc/TODO_head.edoc:		TODO.edoc
-	@(head -7 TODO.edoc; if [ $(TODO_MORE) -gt 0 ]; \
+	@(sed '7q' TODO.edoc; if [ $(TODO_MORE) -gt 0 ]; \
 			then echo "@todo ...plus $(TODO_MORE) more (see TODO.edoc)"; fi) \
 		> doc/TODO_head.edoc
 
@@ -69,11 +69,21 @@ TODO.edoc:	;
 # Rules to regenerate documentation
 #
 
-docs:	README.md $(patsubst src/%.erl, doc/%.md, $(wildcard src/*.erl))
+docs:	neat README.md $(patsubst src/%.erl, doc/%.md, $(wildcard src/*.erl))
 
-doc/%.md:	src/%.erl
-	@$(CROWBAR:_cmds_=doc)
+neat:	$(wildcard doc/*.md)
+	@rm -f *.dump *.stackdump
+
+doc/README.md:	;
 	
+doc/%.md:		src/%.erl
+	@$(CROWBAR:_cmds_=doc)
+
+src/%.erl:		force
+	@if [ ! -f src/$*.erl ]; then (git rm -f doc/$*.*); fi
+	
+force:		;
+
 #
 # Rules for compiling 
 #
@@ -90,10 +100,7 @@ clean:		neat make
 	@if [ "$(ONLINE)" == yes ]; \
 		then (rm -rf deps; $(CROWBAR:_cmds_=clean get-deps)); \
 		else ($(CROWBAR:_cmds_=clean)); fi
-
-neat:
-	@rm -f *.dump *.stackdump
-
+	
 #
 # Rules for managing revisions and synchronized common files
 #
@@ -102,17 +109,24 @@ push:	make docup
 	@if [ "$(DEV)" == yes -a "$(ONLINE)" == yes ]; \
 		then (git push origin master); fi
 
-make:	$(patsubst include/%.mk, \
-			include/$(B_PREFIX)%.mk$(B_SUFFIX), \
-			$(wildcard include/*.mk))
+make:	include/gitignore.template \
+			$(patsubst include/%.mk, \
+				include/$(B_PREFIX)%.mk$(B_SUFFIX), $(wildcard include/*.mk)) \
+			.gitignore
 	@if [ "$(shell basename $(CURDIR))" != nosh ]; \
 		then ($(UNISON) -merge "$(MERGE)"); fi
+		
+include/gitignore.template:		.gitignore
+	@cp -p .gitignore include/gitignore.template
+
+.gitignore:						force
+	@cp -p include/gitignore.template .gitignore
 
 include/$(B_PREFIX)%.mk$(B_SUFFIX):		include/%.mk
 	@if [ ! -f $@ ]; \
 		then ($(UNISON) && (test -f $@ || cp $< $@)); fi
-		
+	
 docup:	docs
 	@git add -f doc/*.md
 	@if ! git diff-index --cached --quiet HEAD; \
-		then (git commit doc/*.md -m "updated docs"); fi		
+		then (git commit $(DOC_FILES) -m "updated docs"); fi		
