@@ -6,9 +6,6 @@
 include/.unison/*
 dev
 
-# Rebar generates this
-ebin/*.app
-
 # Cygwin is messy
 *.dump
 *.stackdump
@@ -18,7 +15,10 @@ doc
 !doc/*.md
 !doc/*.edoc
 
-# Github template
+# Rebar generates our .app file, so we can ignore this folder entirely
+ebin
+
+# Github gitignore template for Erlang
 .eunit
 deps
 *.o
